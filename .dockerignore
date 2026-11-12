@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+__pycache__
+*.pyc
+*.db
+*.sqlite*
+*.pcap
+*.pcapng
+captures/
+database/
+tests/

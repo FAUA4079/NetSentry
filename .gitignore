@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.env
+.env.*
+*.db
+*.db-shm
+*.db-wal
+*.sqlite*
+*.pcap
+*.pcapng
+captures/*
+!captures/.gitkeep
+database/*
+!database/.gitkeep
