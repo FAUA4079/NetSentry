@@ -1,0 +1,73 @@
+name: netsentry
+services:
+  target:
+    image: nginx:1.27-alpine
+    networks: [lab]
+    volumes:
+      - ./target/index.html:/usr/share/nginx/html/index.html:ro
+    restart: unless-stopped
+
+  attacker:
+    image: nicolaka/netshoot:latest
+    networks: [lab]
+    command: ["sleep", "infinity"]
+    cap_drop: [ALL]
+    cap_add: [NET_RAW]
+    restart: unless-stopped
+
+  sensor:
+    build: .
+    network_mode: "service:target"
+    depends_on: [target]
+    command: ["python", "-m", "netsentry.sensor"]
+    environment:
+      NETSENTRY_DB: /data/netsentry.db
+      NETSENTRY_INTERFACE: eth0
+      NETSENTRY_RULESET: /app/config/rules.json
+      PYTHONUNBUFFERED: "1"
+    cap_drop: [ALL]
+    cap_add: [NET_RAW]
+    volumes:
+      - ./config:/app/config:ro
+      - netsentry_data:/data
+    restart: unless-stopped
+
+  enforcer:
+    build:
+      context: .
+      dockerfile: Dockerfile.enforcer
+    network_mode: "service:target"
+    depends_on: [target]
+    command: ["python", "-m", "netsentry.enforcer"]
+    environment:
+      NETSENTRY_DB: /data/netsentry.db
+      PYTHONUNBUFFERED: "1"
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN]
+    volumes:
+      - netsentry_data:/data
+    restart: unless-stopped
+
+  dashboard:
+    build: .
+    command: ["python", "-m", "netsentry.dashboard"]
+    environment:
+      NETSENTRY_DB: /data/netsentry.db
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - netsentry_data:/data
+    ports:
+      - "127.0.0.1:5000:5000"
+    networks: [management]
+    restart: unless-stopped
+
+networks:
+  lab:
+    name: netsentry_lab
+    driver: bridge
+    internal: true
+  management:
+    driver: bridge
+
+volumes:
+  netsentry_data:

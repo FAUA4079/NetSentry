@@ -1,0 +1,99 @@
+{
+  "enabled": [
+    "PORT_SCAN",
+    "TRAFFIC_SPIKE",
+    "RESTRICTED_PORT",
+    "SYN_BURST",
+    "ICMP_ECHO_FLOOD",
+    "UDP_PORT_SCAN",
+    "UDP_BURST",
+    "TCP_RST_BURST",
+    "TCP_FIN_SCAN",
+    "TCP_NULL_SCAN",
+    "TCP_XMAS_SCAN",
+    "TCP_ACK_PROBE",
+    "IP_FRAGMENT",
+    "ICMP_LARGE_ECHO",
+    "ICMP_UNREACH_BURST",
+    "DNS_QUERY_BURST",
+    "DNS_LONG_QUERY",
+    "DNS_HIGH_ENTROPY_LABEL",
+    "DNS_TXT_BURST",
+    "DNS_UNIQUE_NAME_BURST",
+    "DNS_NXDOMAIN_BURST",
+    "HTTP_SENSITIVE_PATH",
+    "HTTP_UNCOMMON_METHOD",
+    "HTTP_LONG_URI",
+    "HTTP_SCANNER_USER_AGENT"
+  ],
+  "settings": {
+    "scan_ports": 10,
+    "scan_window": 15,
+    "rate_packets": 60,
+    "rate_window": 10,
+    "syn_packets": 80,
+    "syn_window": 10,
+    "icmp_packets": 20,
+    "icmp_window": 10,
+    "cooldown": 30
+  },
+  "prohibited_ports": [
+    22,
+    23,
+    445
+  ],
+  "thresholds": {
+    "UDP_PORT_SCAN": [
+      12,
+      15
+    ],
+    "UDP_BURST": [
+      80,
+      10
+    ],
+    "TCP_RST_BURST": [
+      30,
+      10
+    ],
+    "TCP_ACK_PROBE": [
+      12,
+      15
+    ],
+    "ICMP_LARGE_ECHO": [
+      1200,
+      0
+    ],
+    "ICMP_UNREACH_BURST": [
+      15,
+      10
+    ],
+    "DNS_QUERY_BURST": [
+      35,
+      10
+    ],
+    "DNS_LONG_QUERY": [
+      90,
+      0
+    ],
+    "DNS_HIGH_ENTROPY_LABEL": [
+      20,
+      350
+    ],
+    "DNS_TXT_BURST": [
+      15,
+      10
+    ],
+    "DNS_UNIQUE_NAME_BURST": [
+      25,
+      15
+    ],
+    "DNS_NXDOMAIN_BURST": [
+      15,
+      10
+    ],
+    "HTTP_LONG_URI": [
+      512,
+      0
+    ]
+  }
+}

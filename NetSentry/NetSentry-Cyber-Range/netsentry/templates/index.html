@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NetSentry • Security Dashboard</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#0b1220;color:#e5eaf4}
+*{box-sizing:border-box}body{margin:0}main{max-width:1100px;margin:0 auto;padding:32px 20px}header{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:32px;flex-wrap:wrap}
+h1{font-size:26px;margin:0}small,.muted{color:#98a7bd}.label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#93c5fd}
+.status{color:#79e6b0;background:#17352e;padding:8px 12px;border-radius:100px;font-size:13px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card,.panel{background:#151f31;border:1px solid #293650;border-radius:14px;padding:22px}.number{font-size:32px;font-weight:800;margin:12px 0 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.panel h2{font-size:16px;margin:0 0 18px}.bar-row{display:flex;align-items:center;gap:10px;margin:10px 0}.bar-name{width:62px;font-size:13px}.bar-bg{height:10px;background:#293650;border-radius:20px;flex:1;overflow:hidden}.bar{height:100%;background:#53aaf5;border-radius:20px}.bar-value{min-width:54px;text-align:right;font-size:13px}
+.alerts{margin-top:14px;overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;border-bottom:1px solid #293650;padding:13px 9px;vertical-align:top}th{color:#99abc5}.sev{padding:5px 9px;border-radius:10px;font-weight:600}.High{background:#502533;color:#ff9aaf}.Medium{background:#4b391b;color:#facc74}.empty{color:#94a3b8;padding:16px}.plot{display:flex;align-items:end;gap:5px;height:132px;border-bottom:1px solid #475569}.plot>div{flex:1;background:#53aaf5;border-radius:3px 3px 0 0;min-height:2px}button{cursor:pointer;background:#233c62;border:1px solid #4c668b;color:#eff6ff;padding:7px 10px;margin:2px;border-radius:8px}button:disabled{opacity:.5;cursor:not-allowed}button:hover{background:#355784}.state{font-weight:700}.state.observe{color:#facc74}.state.blocked{color:#ff9aaf}.state.released{color:#79e6b0}.foot{margin-top:28px;color:#8798b2;font-size:13px}
+@media(max-width:640px){.cards{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.card{padding:16px}}
+.filters{display:flex;flex-wrap:wrap;align-items:end;gap:9px;margin:0 0 14px}.filters label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#a9b9d0}.filters select,.filters input{background:#0f192b;color:#f0f5ff;border:1px solid #43536d;border-radius:7px;padding:8px;max-width:195px}.filters input:disabled{opacity:.48}.Low{background:#214b5b;color:#b1e5fa}.pager{text-align:center;padding-top:14px}.filter-error{color:#ff9aaf;font-size:12px}.filters input{min-width:185px}
+/* Scroll long dashboard tables independently, as on the Analysis page. */
+.table-scroll{max-height:440px;overflow:auto;overscroll-behavior:contain;border:1px solid #293650;border-radius:9px;scrollbar-gutter:stable}
+.table-scroll table{min-width:680px}
+.table-scroll thead th{position:sticky;top:0;z-index:1;background:#1c2a40;box-shadow:0 1px 0 #40506b}
+.table-scroll tbody tr:hover{background:#1c2a40}
+.table-scroll:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+@media(max-width:640px){.table-scroll{max-height:350px}}
+
+/* v4.5: analysis-oriented split dashboard (left monitoring, right suspicious IPs). */
+main{max-width:1560px}
+.dashboard-columns{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(360px,1fr);align-items:start;gap:16px}
+.dashboard-primary,.dashboard-sidebar{min-width:0}
+.dashboard-sidebar{position:sticky;top:18px}
+.dashboard-sidebar .suspicious-panel{margin-top:0!important;overflow:hidden}
+.dashboard-sidebar .table-scroll{max-height:min(70vh,700px)}
+.dashboard-sidebar .table-scroll table{min-width:510px;font-size:12px}
+.dashboard-sidebar .table-scroll th,.dashboard-sidebar .table-scroll td{padding:11px 7px}
+.dashboard-sidebar .table-scroll td:nth-child(2){min-width:155px;overflow-wrap:anywhere}
+.dashboard-sidebar .table-scroll td:first-child{white-space:nowrap}
+.dashboard-primary .table-scroll{max-height:500px}
+.dashboard-primary .cards{gap:10px}
+.dashboard-primary .card{padding:16px}
+.dashboard-primary .number{font-size:27px}
+@media(max-width:1180px){.dashboard-columns{grid-template-columns:1fr}.dashboard-sidebar{position:static}.dashboard-sidebar .table-scroll table{min-width:680px}}
+@media(max-width:640px){main{padding:20px 12px}.dashboard-primary .number{font-size:27px}}
+</style></head><body><main>
+<header><div><div class="label">Cyber Range · Network Intrusion Detection</div><h1>🛡 NetSentry</h1><small>Explainable traffic monitoring and alerts</small></div><div class="status" id="status">● Connecting</div></header>
+<div class="dashboard-columns"><div class="dashboard-primary"><div class="cards"><div class="card"><div class="muted">Total observed packets</div><div class="number" id="packets">—</div></div><div class="card"><div class="muted">Security alerts</div><div class="number" id="alertcount">—</div></div><div class="card"><div class="muted">Observed protocols</div><div class="number" id="protocolcount">—</div></div></div>
+<div class="grid"><section class="panel"><h2>Traffic by protocol</h2><div id="protocols" class="muted">Loading…</div></section><section class="panel"><h2>Packet activity · last 20 minutes</h2><div class="plot" id="timeline"></div><div class="muted" style="font-size:12px;margin-top:12px">One bar per minute · sample-based activity</div></section></div>
+<section class="panel alerts"><h2>Recent Detection Alerts</h2><div class="filters"><label>Time <select id="recent-range"><option value="900">Last 15 minutes</option><option value="3600">Last 1 hour</option><option value="21600">Last 6 hours</option><option value="86400">Last 24 hours</option><option value="604800">Last 7 days</option><option value="all" selected>All history</option></select></label><label>Severity <select id="recent-severity"><option value="all">All severities</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select></label><button type="button" id="recent-apply">Apply</button><span id="recent-summary" class="muted"></span><span id="recent-error" class="filter-error" role="alert"></span></div><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable recent detection alerts"><table><thead><tr><th>Time</th><th>Source</th><th>Rule</th><th>Activity / evidence</th><th>Severity</th></tr></thead><tbody id="alerts"><tr><td colspan="5" class="empty">Waiting for traffic…</td></tr></tbody></table></div><div class="pager"><button type="button" id="recent-more" hidden>Load More (30)</button></div></section>
+</div><aside class="dashboard-sidebar"><section class="panel alerts suspicious-panel"><h2>Suspicious IPs</h2><p class="muted">The most recent alert for each IP explains the suspicious activity. Select Analyze to inspect packet evidence, observe, block or release after human review.</p><div id="response-status" class="muted"></div><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable suspicious IP list"><table><thead><tr><th>Source IP</th><th>Suspicious activity / rule evidence</th><th>Severity</th><th>Current policy</th><th>Review</th></tr></thead><tbody id="policies"></tbody></table></div></section></aside></div>
+<div class="foot">This classroom prototype reports suspicious patterns, not proof of compromise. No AI inference or automatic response. Containment requires an explicit operator decision; response rules affect only the target container. Refreshes every 3 seconds.</div>
+</main><script>
+const $=id=>document.getElementById(id), fmt=n=>Number(n).toLocaleString();
+const text=(tag,value)=>{const el=document.createElement(tag);el.textContent=String(value??'');return el};
+function configureFilter(id,callback){
+ const range=$(id+'-range');
+ range.addEventListener('change',callback);
+ $(id+'-apply').addEventListener('click',callback);
+}
+function timeParams(id,prefix){
+ const params=new URLSearchParams(),selected=$(id+'-range').value;
+ if(selected==='all')return params;
+ const seconds=Number(selected);
+ if(!Number.isFinite(seconds)||seconds<=0)throw Error('Invalid time preset');
+ params.set(prefix+'_from',String(Math.floor(Date.now()/1000)-seconds));
+ return params;
+}
+let shown=30,lastTotal=0,refreshSequence=0;
+async function refresh(){const sequence=++refreshSequence;
+ try{
+ $('recent-error').textContent='';const q=timeParams('recent','alert');q.set('severity',$('recent-severity').value);q.set('limit',String(Math.min(shown,100)));q.set('offset','0');
+ // Fetch in pages of 100 so Load More remains unbounded by a single HTTP page.
+ let rows=[],stats;
+ for(let offset=0;offset<shown;offset+=100){q.set('offset',String(offset));q.set('limit',String(Math.min(100,shown-offset)));const r=await fetch('/api/stats?'+q,{cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||('HTTP '+r.status));if(!stats)stats=d;rows.push(...d.alerts);if(rows.length>=d.filtered_alerts)break}
+ if(sequence!==refreshSequence)return;
+ $('packets').textContent=fmt(stats.total_packets);$('alertcount').textContent=fmt(stats.total_alerts);$('protocolcount').textContent=Object.keys(stats.protocols).length;
+ $('status').textContent='● Dashboard online';$('status').style.color='#79e6b0';lastTotal=stats.filtered_alerts;
+ const p=$('protocols');p.replaceChildren();const max=Math.max(1,...Object.values(stats.protocols));
+ for(const [name,count] of Object.entries(stats.protocols)){const row=document.createElement('div');row.className='bar-row';const lbl=text('span',name);lbl.className='bar-name';const track=document.createElement('div');track.className='bar-bg';const bar=document.createElement('div');bar.className='bar';bar.style.width=count/max*100+'%';track.append(bar);const val=text('span',fmt(count));val.className='bar-value';row.append(lbl,track,val);p.append(row)}
+ if(!Object.keys(stats.protocols).length)p.textContent='No captured packets yet';
+ const timeline=$('timeline');timeline.replaceChildren();const now=Math.floor(Date.now()/60000)*60;
+ const countMap=new Map(stats.timeline.map(x=>[Number(x.minute),Number(x.n)]));const vals=Array.from({length:20},(_,i)=>countMap.get(now-(19-i)*60)||0);const peak=Math.max(1,...vals);for(const v of vals){const b=document.createElement('div');b.style.height=Math.max(2,v/peak*100)+'%';b.title=v+' packets';timeline.append(b)}
+ $('recent-summary').textContent=`Showing ${rows.length} of ${lastTotal} matching alerts`;$('recent-more').hidden=rows.length>=lastTotal;
+ const body=$('alerts');body.replaceChildren();if(!rows.length){const tr=document.createElement('tr'),td=text('td','No matching alerts');td.colSpan=5;tr.append(td);body.append(tr)}
+ for(const a of rows){const tr=document.createElement('tr'),severity=text('span',a.severity);severity.className='sev '+a.severity;const sevcell=document.createElement('td');sevcell.append(severity);const activity=document.createElement('td');activity.append(text('strong',a.activity),document.createElement('br'),text('small',a.details));tr.append(text('td',new Date(a.timestamp*1000).toLocaleString()),text('td',a.source_ip),text('td',a.rule_id),activity,sevcell);body.append(tr)}
+ }catch(e){if(sequence!==refreshSequence)return;$('recent-error').textContent=e.message;console.error(e)}
+}
+async function refreshResponse(){try{
+ const [ra,rb]=await Promise.all([fetch('/api/response',{cache:'no-store'}),fetch('/api/suspicious-ips',{cache:'no-store'})]);if(!ra.ok||!rb.ok)throw Error('Unable to fetch suspicious IPs');const a=await ra.json(),b=await rb.json();
+ const policies=new Map(a.policies.map(x=>[x.ip,x]));const sources=new Map();
+ for(const item of b.sources){sources.set(item.source_ip,item)}
+ for(const policy of a.policies){if(!sources.has(policy.ip))sources.set(policy.ip,null)}
+ const body=$('policies');body.replaceChildren();if(!sources.size){const tr=document.createElement('tr'),td=text('td','No suspicious IPs recorded');td.colSpan=5;tr.append(td);body.append(tr)}
+ for(const [ip,last] of sources){const policy=policies.get(ip),tr=document.createElement('tr');const ev=document.createElement('td');ev.append(text('strong',last?.rule_id||'Earlier alert'),document.createElement('br'),text('small',(last?.details||'Inspect saved evidence in Analysis')+(last?' · '+last.alert_count+' total alert(s)':'')));const sev=document.createElement('td');if(last){const badge=text('span',last.severity);badge.className='sev '+last.severity;sev.append(badge)}else sev.textContent='—';const link=document.createElement('a');link.href='/observe/'+encodeURIComponent(ip);link.textContent='Analyze ↗';link.target='_blank';link.rel='noopener noreferrer';link.title='Open investigation in a new tab';link.style.cssText='color:#93c5fd;text-decoration:underline';const action=document.createElement('td');action.append(link);const state=text('td',policy?.mode||'unrestricted');const ipLink=document.createElement('a');ipLink.href=link.href;ipLink.target='_blank';ipLink.rel='noopener noreferrer';ipLink.textContent=ip;ipLink.style.color='#93c5fd';const ipCell=document.createElement('td');ipCell.append(ipLink);tr.append(ipCell,ev,sev,state,action);body.append(tr)}
+ }catch(e){$('response-status').textContent='Suspicious IPs error: '+e.message}
+}
+function reset(){shown=30;refresh()}
+$('recent-more').addEventListener('click',()=>{shown+=30;refresh()});
+configureFilter('recent',reset);$('recent-severity').addEventListener('change',reset);
+refresh();refreshResponse();setInterval(refresh,5000);setInterval(refreshResponse,10000);
+</script></body></html>
